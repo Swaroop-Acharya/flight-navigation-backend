@@ -28,10 +28,10 @@ fs.readFile('routes.json','utf-8',(err,data)=>{
 
 //DB CONNECTION
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '20042002',
-  database: 'airbus'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE
 });
 db.connect((err) => {
   if (err) {
