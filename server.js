@@ -900,7 +900,7 @@ app.post("/api/airport-graphs", async (req, res) => {
 app.post('/api/airport-graphs', async (req, res) => {
   try {
     const { sourceIataCode, destinationIataCode } = req.body;
-    const response = await axios.post(`${process.env.URL}/api/airport-graphs`, {
+    const response = await axios.post(`https://flight-navigation-backend.onrender.com/api/airport-graphs`, {
       sourceIataCode,
       destinationIataCode,
     });
