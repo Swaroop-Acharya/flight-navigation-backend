@@ -13,15 +13,15 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-const corsOptions = {
-  origin: "https://flight-navigation-frontend.vercel.app/",
-  methods: "GET,POST,PUT,DELETE,PATH,HEAD,PATCH",
-  credentials: true,
-};
-
-//Middleware
-//handling the cors error
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    "Access-Control-Allow-Origin": "*",
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
+);
 const port = process.env.PORT || 5000;
 
 fs.readFile('routes.json','utf-8',(err,data)=>{
