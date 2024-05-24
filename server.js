@@ -74,7 +74,7 @@ app.post('/api/insertAirport', (req, res) => {
 
     // Create the INSERT INTO statement
     const insertQuery = `
-      INSERT INTO Airports (AirportName, City, Country, IATA_Code, ICAO_Code, AirportLatitude, AirportLongitude, Altitude)
+      INSERT INTO airports (AirportName, City, Country, IATA_Code, ICAO_Code, AirportLatitude, AirportLongitude, Altitude)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
@@ -120,7 +120,7 @@ app.post('/api/insertDestinationAirport', (req, res) => {
 
     // Create the INSERT INTO statement for destination airport data
     const insertQuery = `
-      INSERT INTO DestinationAirport (destinationAirportName, destinationCity, destinationCountry, destinationIataCode, destinationIcaoCode, destinationLatitude, destinationLongitude, destinationAltitude, timezone)
+      INSERT INTO destinationairport (destinationAirportName, destinationCity, destinationCountry, destinationIataCode, destinationIcaoCode, destinationLatitude, destinationLongitude, destinationAltitude, timezone)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
@@ -149,7 +149,7 @@ app.post("/api/near", async (req, res) => {
 
     // Insert the data for the nearest airport into the NearestAirport table
     const nearestAirportInsertQuery = `
-      INSERT INTO NearestAirport (AirportName, City, IATA_Code)
+      INSERT INTO nearestairport (AirportName, City, IATA_Code)
       VALUES (?, ?, ?)
     `;
 
@@ -196,7 +196,7 @@ app.post('/api/insertFlightFuel', (req, res) => {
 
    // Insert the data into the Fuel table
     const insertQuery = `
-      INSERT INTO Fuel (ICAO24, Distance, Fuel, Co2, IATA_Code, ICAO_Code, Model, GcdTrue)
+      INSERT INTO fuel (ICAO24, Distance, Fuel, Co2, IATA_Code, ICAO_Code, Model, GcdTrue)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
@@ -230,7 +230,7 @@ app.post("/api/getlocation", async (req, res) => {
     const weatherData = await getEnvironmentalData(location);
     const factors = extractFactors(weatherData);
     const insertQuery = `
-      INSERT INTO Weather (
+      INSERT INTO weather (
         Location,
         WeatherText,
         Latitude,
