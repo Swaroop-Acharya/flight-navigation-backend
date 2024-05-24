@@ -584,7 +584,7 @@ async function getFlyStatus(citiesCovered) {
       console.log(factors);
 
       const insertQuery = `
-        INSERT INTO Weather (
+        INSERT INTO weather (
           Location,
           WeatherText,
           Latitude,
