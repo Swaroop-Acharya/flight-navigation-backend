@@ -13,11 +13,21 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-app.use(cors({
-  origin: "https://flight-navigation-frontend.vercel.app", // Allow your frontend's URL
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true, // If you want to allow cookies or other credentials
-}));
+app.use(
+  cors({
+    "Access-Control-Allow-Origin": "*",
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
+);
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*"); 
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, Custom-Header-1, Custom-Header-2");
+  next();
+});
 const port = process.env.PORT || 5000;
 
 fs.readFile('routes.json','utf-8',(err,data)=>{
