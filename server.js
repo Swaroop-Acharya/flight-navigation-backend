@@ -14,7 +14,7 @@ const app = express();
 
 app.use(express.json());
 const corsOptions = {
-  origin: "https://flight-navigation-frontend.vercel.app",
+  origin: "https://flight-navigation-frontend.vercel.app/",
   methods: "GET,POST,PUT,DELETE,PATH,HEAD,PATCH",
   credentials: true,
 };
