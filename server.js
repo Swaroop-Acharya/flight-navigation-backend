@@ -900,7 +900,7 @@ app.post("/api/airport-graphs", async (req, res) => {
 app.post('/api/airport-graphs', async (req, res) => {
   try {
     const { sourceIataCode, destinationIataCode } = req.body;
-    const response = await axios.post('http://localhost:5000/api/airport-graphs', {
+    const response = await axios.post(`${process.env.URL}/api/airport-graphs`, {
       sourceIataCode,
       destinationIataCode,
     });
