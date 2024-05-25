@@ -2,106 +2,132 @@ const express = require("express");
 const dotenv = require("dotenv");
 const axios = require("axios");
 const cors = require("cors");
-const mysql=require('mysql');
- const fs = require('fs');
-const path = require('path');
-
-let routes=[]
-
+const mysql = require("mysql");
 dotenv.config();
 
 const app = express();
-
+app.use(cors());
 app.use(express.json());
-app.use(
-  cors({
-    "Access-Control-Allow-Origin": "*",
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  })
-);
 
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*"); 
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, Custom-Header-1, Custom-Header-2");
-  next();
-});
 const port = process.env.PORT || 5000;
-
-fs.readFile('routes.json','utf-8',(err,data)=>{
-  if(err){
-    console.log("Errorr");
-    return;
-  }
-  routes=JSON.parse(data)
-})
-
-
-
-//DB CONNECTION
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE
+  database: process.env.DB_DATABASE,
 });
-db.connect((err) => {
+connect((err) => {
   if (err) {
-    console.error('Error connecting to the database:', err);
+    console.error("Error connecting to the database:", err);
     return;
   }
-  console.log('Connected to the database');
+  console.log("Connected to the database");
 });
 
+// let routes = [];
 
-app.post('/api/insertAirport', (req, res) => {
+// // Define API endpoint to fetch data
+// app.get('/api/getRoutes', (req, res) => {
+//   // SQL query to select all data from the origin table
+//   const sql = 'SELECT * FROM origin';
+
+//   // Execute the query
+//   db.query(sql, (err, result) => {
+//     if (err) {
+//       throw err;
+//     }
+//     // Store the fetched data in the routes object
+//     routes.origin = result;
+//    // console.log()
+//     // Send the result as JSON response
+//     res.json(result);
+//   });
+// });
+
+app.get("/api/getRoute", async (req, res) => {
+  try {
+    res.status(200).json(routes);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch routes data" });
+  }
+});
+
+app.post("/api/insertAirport", (req, res) => {
   try {
     // Get the entire response data from the request body
     const responseData = req.body;
 
     // Ensure that the necessary data is present in the request body
-    if (!responseData || !responseData.data || !responseData.data.attributes || !responseData.data.attributes.from_airport) {
-      console.error('Invalid request body:', responseData);
-      return res.status(400).send('Invalid request body');
+    if (
+      !responseData ||
+      !responseData.data ||
+      !responseData.data.attributes ||
+      !responseData.data.attributes.from_airport
+    ) {
+      console.error("Invalid request body:", responseData);
+      return res.status(400).send("Invalid request body");
     }
 
     // Extract relevant data from responseData
     const airportData = responseData.data.attributes.from_airport;
 
-    const { name: airport_name, city, country, iata: iata_code, icao: icao_code, latitude, longitude, altitude } = airportData;
+    const {
+      name: airport_name,
+      city,
+      country,
+      iata: iata_code,
+      icao: icao_code,
+      latitude,
+      longitude,
+      altitude,
+    } = airportData;
 
     // Create the INSERT INTO statement
     const insertQuery = `
-      INSERT INTO airports (AirportName, City, Country, IATA_Code, ICAO_Code, AirportLatitude, AirportLongitude, Altitude)
+      INSERT INTO Airports (AirportName, City, Country, IATA_Code, ICAO_Code, AirportLatitude, AirportLongitude, Altitude)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     // Execute the query with the extracted data
-    db.query(insertQuery, [airport_name, city, country, iata_code, icao_code, latitude, longitude, altitude], (err, results) => {
-      if (err) {
-        console.error('Error inserting data into the Airports table:', err);
-        return res.status(500).send('Error inserting data into the Airports table');
+    db.query(
+      insertQuery,
+      [
+        airport_name,
+        city,
+        country,
+        iata_code,
+        icao_code,
+        latitude,
+        longitude,
+        altitude,
+      ],
+      (err, results) => {
+        if (err) {
+          console.error("Error inserting data into the Airports table:", err);
+          return res
+            .status(500)
+            .send("Error inserting data into the Airports table");
+        }
+        console.log("Data inserted successfully");
+        res.status(200).send("Data inserted successfully");
       }
-      console.log('Data inserted successfully');
-      res.status(200).send('Data inserted successfully');
-    });
-
+    );
   } catch (error) {
     console.error("Error handling request:", error);
-    res.status(500).send('Error handling request');
+    res.status(500).send("Error handling request");
   }
 });
 
-
-app.post('/api/insertDestinationAirport', (req, res) => {
+app.post("/api/insertDestinationAirport", (req, res) => {
   try {
     // Ensure that the request body contains the necessary data
     const { data } = req.body;
     if (!data || !data.attributes || !data.attributes.to_airport) {
-      console.error('Invalid request body:', req.body);
-      return res.status(400).send('Invalid request body');
+      console.error("Invalid request body:", req.body);
+      return res.status(400).send("Invalid request body");
     }
 
     // Extract relevant data for the destination airport
@@ -115,114 +141,200 @@ app.post('/api/insertDestinationAirport', (req, res) => {
       latitude: destinationLatitude,
       longitude: destinationLongitude,
       altitude: destinationAltitude,
-      timezone
+      timezone,
     } = to_airport;
 
     // Create the INSERT INTO statement for destination airport data
     const insertQuery = `
-      INSERT INTO destinationairport (destinationAirportName, destinationCity, destinationCountry, destinationIataCode, destinationIcaoCode, destinationLatitude, destinationLongitude, destinationAltitude, timezone)
+      INSERT INTO DestinationAirport (destinationAirportName, destinationCity, destinationCountry, destinationIataCode, destinationIcaoCode, destinationLatitude, destinationLongitude, destinationAltitude, timezone)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     // Execute the insertion query for destination airport data
-    db.query(insertQuery, [destinationAirportName, destinationCity, destinationCountry, destinationIataCode, destinationIcaoCode, destinationLatitude, destinationLongitude, destinationAltitude, timezone], (err, results) => {
-      if (err) {
-        console.error('Error inserting data into the DestinationAirport table:', err);
-        return res.status(500).send('Error inserting data into the DestinationAirport table');
-      }
-      
-      // If insertion was successful, send a success response
-      res.status(200).send('Destination airport data inserted successfully');
-    });
+    db.query(
+      insertQuery,
+      [
+        destinationAirportName,
+        destinationCity,
+        destinationCountry,
+        destinationIataCode,
+        destinationIcaoCode,
+        destinationLatitude,
+        destinationLongitude,
+        destinationAltitude,
+        timezone,
+      ],
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Error inserting data into the DestinationAirport table:",
+            err
+          );
+          return res
+            .status(500)
+            .send("Error inserting data into the DestinationAirport table");
+        }
 
+        // If insertion was successful, send a success response
+        res.status(200).send("Destination airport data inserted successfully");
+      }
+    );
   } catch (error) {
     console.error("Error handling request:", error);
-    res.status(500).send('Error handling request');
+    res.status(500).send("Error handling request");
   }
 });
-
 
 app.post("/api/near", async (req, res) => {
   try {
     // Extract data for the nearest airport from the request body
-    const { nearestAirportName, nearestCity, nearestIataCode } = req.body.nearestAirport;
+    const { nearestAirportName, nearestCity, nearestIataCode } =
+      req.body.nearestAirport;
 
     // Insert the data for the nearest airport into the NearestAirport table
     const nearestAirportInsertQuery = `
-      INSERT INTO nearestairport (AirportName, City, IATA_Code)
+      INSERT INTO NearestAirport (AirportName, City, IATA_Code)
       VALUES (?, ?, ?)
     `;
 
     // Execute the insert query for the nearest airport
-    db.query(nearestAirportInsertQuery, [nearestAirportName, nearestCity, nearestIataCode], (err, results) => {
-      if (err) {
-        console.error('Error inserting data for nearest airport into the NearestAirport table:', err);
-        return res.status(500).send('Error inserting data for nearest airport into the NearestAirport table');
-      }
+    db.query(
+      nearestAirportInsertQuery,
+      [nearestAirportName, nearestCity, nearestIataCode],
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Error inserting data for nearest airport into the NearestAirport table:",
+            err
+          );
+          return res
+            .status(500)
+            .send(
+              "Error inserting data for nearest airport into the NearestAirport table"
+            );
+        }
 
-      // Extract data for all airports from the request body
-      const allAirports = req.body.allAirports;
+        // Extract data for all airports from the request body
+        const allAirports = req.body.allAirports;
 
-      // Insert data for all airports into the NearestAirport table
-      const allAirportsInsertQuery = `
+        // Insert data for all airports into the NearestAirport table
+        const allAirportsInsertQuery = `
         INSERT INTO NearestAirport (AirportName, City, IATA_Code)
         VALUES (?, ?, ?)
       `;
 
-      // Iterate over all airports and execute the insert query for each airport
-      allAirports.forEach(airport => {
-        const { iataCode, name, city } = airport;
-        db.query(allAirportsInsertQuery, [name, city, iataCode], (err, results) => {
-          if (err) {
-            console.error('Error inserting data for airport into the NearestAirport table:', err);
-          }
+        // Iterate over all airports and execute the insert query for each airport
+        allAirports.forEach((airport) => {
+          const { iataCode, name, city } = airport;
+          db.query(
+            allAirportsInsertQuery,
+            [name, city, iataCode],
+            (err, results) => {
+              if (err) {
+                console.error(
+                  "Error inserting data for airport into the NearestAirport table:",
+                  err
+                );
+              }
+            }
+          );
         });
-      });
 
-      // Send a success response if all insertions were successful
-      res.status(200).json({ status: "success", message: "Data inserted into NearestAirport table successfully" });
-    });
+        // Send a success response if all insertions were successful
+        res
+          .status(200)
+          .json({
+            status: "success",
+            message: "Data inserted into NearestAirport table successfully",
+          });
+      }
+    );
   } catch (error) {
     console.error("Error handling request:", error);
-    res.status(500).send('Error handling request');
+    res.status(500).send("Error handling request");
   }
 });
 
-
-app.post('/api/insertFlightFuel', (req, res) => {
+app.post("/api/insertFlightFuel", (req, res) => {
   try {
     const fuelData = req.body;
-    console.log( [fuelData.icao24, fuelData.distance, fuelData.fuel, fuelData.co2, fuelData.iata, fuelData.icao, fuelData.model, fuelData.gcd]);
+    console.log([
+      fuelData.icao24,
+      fuelData.distance,
+      fuelData.fuel,
+      fuelData.co2,
+      fuelData.iata,
+      fuelData.icao,
+      fuelData.model,
+      fuelData.gcd,
+    ]);
 
-   // Insert the data into the Fuel table
+    // Insert the data into the Fuel table
     const insertQuery = `
-      INSERT INTO fuel (ICAO24, Distance, Fuel, Co2, IATA_Code, ICAO_Code, Model, GcdTrue)
+      INSERT INTO Fuel (ICAO24, Distance, Fuel, Co2, IATA_Code, ICAO_Code, Model, GcdTrue)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    
-
     // Execute the insert query
-    db.query(insertQuery, [fuelData.icao24, fuelData.distance, fuelData.fuel, fuelData.co2, fuelData.iata, fuelData.icao, fuelData.model, fuelData.gcd], (err, results) => {
-      if (err) {
-        console.error('Error inserting flight fuel data into the Fuel table:', err);
-        return res.status(500).json({ status: 'error', message: 'Error inserting flight fuel data into the Fuel table' });
+    db.query(
+      insertQuery,
+      [
+        fuelData.icao24,
+        fuelData.distance,
+        fuelData.fuel,
+        fuelData.co2,
+        fuelData.iata,
+        fuelData.icao,
+        fuelData.model,
+        fuelData.gcd,
+      ],
+      (err, results) => {
+        if (err) {
+          console.error(
+            "Error inserting flight fuel data into the Fuel table:",
+            err
+          );
+          return res
+            .status(500)
+            .json({
+              status: "error",
+              message: "Error inserting flight fuel data into the Fuel table",
+            });
+        }
+
+        // If insertion was successful, send a success response
+        res
+          .status(200)
+          .json({
+            status: "success",
+            message: "Flight fuel data inserted successfully",
+          });
       }
-      
-      // If insertion was successful, send a success response
-      res.status(200).json({ status: 'success', message: 'Flight fuel data inserted successfully' });
-    });
+    );
   } catch (error) {
-    console.error('Error handling request:', error);
-    res.status(500).json({ status: 'error', message: 'Error handling request' });
+    console.error("Error handling request:", error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Error handling request" });
   }
 });
 
-
-
-
-
-
+app.get("/api/check-db-connection", async (req, res) => {
+  try {
+    const client = await pool.connect();
+    client.release();
+    res.json({
+      status: "success",
+      message: "PostgreSQL database connected successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to connect to PostgreSQL database",
+    });
+  }
+});
 
 app.post("/api/getlocation", async (req, res) => {
   try {
@@ -230,7 +342,7 @@ app.post("/api/getlocation", async (req, res) => {
     const weatherData = await getEnvironmentalData(location);
     const factors = extractFactors(weatherData);
     const insertQuery = `
-      INSERT INTO weather (
+      INSERT INTO Weather (
         Location,
         WeatherText,
         Latitude,
@@ -248,7 +360,7 @@ app.post("/api/getlocation", async (req, res) => {
         TimeStamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?))
     `;
-    
+
     const values = [
       factors.location,
       factors.text,
@@ -264,9 +376,9 @@ app.post("/api/getlocation", async (req, res) => {
       factors.cloudCover,
       factors.uvIndex,
       factors.gust.mph,
-      factors.lastUpdated
+      factors.lastUpdated,
     ];
-    
+
     await db.query(insertQuery, values);
     res.status(200).json(factors);
   } catch (error) {
@@ -323,91 +435,168 @@ const extractFactors = (weatherData) => {
 
 // Function to check weather conditions
 const checkWeatherConditions = (weatherData) => {
-  const minVisibilityKm = 5; // Minimum visibility in kilometers
-  const maxWindSpeedKph = 40; // Maximum wind speed in kilometers per hour
-  const maxCloudCover = 80; // Maximum cloud cover in percentage
-  const minTemperatureC = -40; // Minimum temperature in Celsius
-  const maxTemperatureC = 49; // Maximum temperature in Celsius
-  const minPressureMb = 950; // Minimum pressure in millibars
-  const maxHumidity = 95; // Maximum humidity in percentage
-  const maxUVIndex = 5; // Maximum UV index
+  const minVisibility = 1.0; // Minimum visibility in kilometers
+  const maxWindSpeed = 20.0; // Maximum wind speed in kilometers per hour
 
-  if (!weatherData) {
-    return false;
-  }
-
-  let conditionMet = true;
-  // console.log(weatherData.location+"=>"+weatherData.visibility.km)
-
-  // Check visibility
-  if (weatherData.visibility.km < minVisibilityKm) {
-    conditionMet = false;
-  }
-
-  // Check wind speed
-  if (weatherData.wind.speed > maxWindSpeedKph) {
-    conditionMet = false;
-  }
-
-  // Check cloud cover
-  if (weatherData.cloudCover > maxCloudCover) {
-    conditionMet = false;
-  }
-
-  // Check temperature
+  // Check if visibility and wind speed are within acceptable ranges
   if (
-    weatherData.temperature.celsius < minTemperatureC ||
-    weatherData.temperature.celsius > maxTemperatureC
+    weatherData.visibility.km >= minVisibility &&
+    weatherData.wind.speed <= maxWindSpeed
   ) {
-    conditionMet = false;
+    return true; // Weather conditions are suitable
   }
-
-  // Check pressure
-  if (weatherData.pressure.mb < minPressureMb) {
-    conditionMet = false;
-  }
-
-  // Check humidity
-  if (weatherData.humidity > maxHumidity) {
-    conditionMet = false;
-  }
-
-  // Check UV index
-  if (weatherData.uvIndex > maxUVIndex) {
-    conditionMet = false;
-  }
-  // console.log(weatherData.location+"=>"+conditionMet)
-  return conditionMet;
+  return false; // Weather conditions are not suitable
 };
 
 app.post("/api/get-nearest-airport", async (req, res) => {
   const { latitude, longitude, radius, destinationIataCode } = req.body;
 
-  async function fetchAirports(latitude, longitude) {
-    try {
-      const response = await axios.get(
-        `https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude=${latitude}&longitude=${longitude}&radius=${radius}&page%5Blimit%5D=10&page%5Boffset%5D=0&sort=relevance`,
-        {
-          headers: {
-            accept: "application/vnd.amadeus+json",
-            Authorization: `Bearer ${process.env.AMADEUS_API_KEY}`,
-          },
-        }
-      );
-      return response.data.data.map((airport) => ({
-        iataCode: airport.iataCode,
-        name: airport.name,
-        city: airport.address.cityName,
+  async function fetchAirports() {
+    const data = [
+      {
+        type: "location",
+        subType: "AIRPORT",
+        name: "CHENNAI INTERNATIONAL",
+        detailedName: "CHENNAI/TN/IN:CHENNAI INTERNAT",
+        timeZoneOffset: "+05:30",
+        iataCode: "MAA",
         geoCode: {
-          latitude: airport.geoCode.latitude,
-          longitude: airport.geoCode.longitude,
+          latitude: 12.98834,
+          longitude: 80.16584,
         },
-        distance: airport.distance.value, // Assuming the API returns the distance
-      }));
-    } catch (error) {
-      console.error("Error fetching airport data:", error);
-      return [];
-    }
+        address: {
+          cityName: "CHENNAI",
+          cityCode: "MAA",
+          countryName: "INDIA",
+          countryCode: "IN",
+          stateCode: "TN",
+          regionCode: "ASIA",
+        },
+        distance: {
+          value: 0,
+          unit: "KM",
+        },
+        analytics: {
+          flights: {
+            score: 14,
+          },
+          travelers: {
+            score: 10,
+          },
+        },
+        relevance: 3155.57275,
+      },
+      {
+        type: "location",
+        subType: "AIRPORT",
+        name: "KEMPEGOWDA INTL",
+        detailedName: "BENGALURU/KA/IN:KEMPEGOWDA INT",
+        timeZoneOffset: "+05:30",
+        iataCode: "BLR",
+        geoCode: {
+          latitude: 13.20084,
+          longitude: 77.70889,
+        },
+        address: {
+          cityName: "BENGALURU",
+          cityCode: "BLR",
+          countryName: "INDIA",
+          countryCode: "IN",
+          stateCode: "KA",
+          regionCode: "ASIA",
+        },
+        distance: {
+          value: 267,
+          unit: "KM",
+        },
+        analytics: {
+          flights: {
+            score: 16,
+          },
+          travelers: {
+            score: 12,
+          },
+        },
+        relevance: 6.05995,
+      },
+      {
+        type: "location",
+        subType: "AIRPORT",
+        name: "TIRUPATI",
+        detailedName: "TIRUPATI/AP/IN",
+        timeZoneOffset: "+05:30",
+        iataCode: "TIR",
+        geoCode: {
+          latitude: 13.6325,
+          longitude: 79.54334,
+        },
+        address: {
+          cityName: "TIRUPATI",
+          cityCode: "TIR",
+          countryName: "INDIA",
+          countryCode: "IN",
+          stateCode: "AP",
+          regionCode: "ASIA",
+        },
+        distance: {
+          value: 98,
+          unit: "KM",
+        },
+        analytics: {
+          flights: {
+            score: 1,
+          },
+          travelers: {
+            score: 1,
+          },
+        },
+        relevance: 1.21542,
+      },
+      {
+        type: "location",
+        subType: "AIRPORT",
+        name: "CUDDAPAH",
+        detailedName: "CUDDAPAH/AP/IN",
+        timeZoneOffset: "+05:30",
+        iataCode: "CDP",
+        geoCode: {
+          latitude: 14.51,
+          longitude: 78.77278,
+        },
+        address: {
+          cityName: "CUDDAPAH",
+          cityCode: "CDP",
+          countryName: "INDIA",
+          countryCode: "IN",
+          stateCode: "AP",
+          regionCode: "ASIA",
+        },
+        distance: {
+          value: 226,
+          unit: "KM",
+        },
+        analytics: {
+          flights: {
+            score: 0,
+          },
+          travelers: {
+            score: 0,
+          },
+        },
+        relevance: 0.209,
+      },
+    ];
+
+    return data.map((airport) => ({
+      iataCode: airport.iataCode,
+      name: airport.name,
+      city: airport.address.cityName,
+      geoCode: {
+        latitude: airport.geoCode.latitude,
+        longitude: airport.geoCode.longitude,
+      },
+      distance: airport.distance.value, // Assuming the API returns the distance
+    }));
   }
 
   function constructGraph(airports) {
@@ -459,7 +648,7 @@ app.post("/api/get-nearest-airport", async (req, res) => {
 
   try {
     // Fetch airport data
-    const airports = await fetchAirports(latitude, longitude);
+    const airports = await fetchAirports();
 
     // Filter out airports with null distance
     const validAirports = airports.filter(
@@ -473,20 +662,16 @@ app.post("/api/get-nearest-airport", async (req, res) => {
       return;
     }
 
-    // Define the plane's node
-    const planeNode = "PLM"; // Node representing the plane's current location
+    const planeNode = "PLM";
 
-    // Create the graph from valid airport data
     const graph = constructGraph(validAirports);
     graph[planeNode] = validAirports.map((airport) => ({
       iataCode: airport.iataCode,
       distance: airport.distance,
     }));
 
-    // Dijkstra's algorithm to find the shortest path
     const distancesFromPlane = dijkstra(graph, planeNode, destinationIataCode);
 
-    // Find the nearest airport
     let nearestAirport = null;
     let minDistance = Infinity;
     Object.entries(distancesFromPlane).forEach(([iataCode, distance]) => {
@@ -540,6 +725,65 @@ app.post("/api/get-nearest-airport", async (req, res) => {
       .json({ status: "error", message: "Failed to fetch airport data" });
   }
 });
+
+const routes = [
+  {
+    origin: "Mangalore",
+    originIATACode: "IXE",
+    destination: "Chennai International",
+    destinationIATACode: "MAA",
+    citiesCovered: ["Chikkamagaluru", "Vellore"],
+  },
+  {
+    origin: "Mangalore",
+    originIATACode: "IXE",
+    destination: "Coimbatore International",
+    destinationIATACode: "CJB",
+    citiesCovered: ["Chikkamagaluru", "Mysore"],
+  },
+  {
+    origin: "Mangalore",
+    originIATACode: "IXE",
+    destination: "Tirupati",
+    destinationIATACode: "TIR",
+    citiesCovered: ["Chikkamagaluru", "Chittoor"],
+  },
+  {
+    origin: "Mangalore",
+    originIATACode: "IXE",
+    destination: "Cuddapah",
+    destinationIATACode: "CDP",
+    citiesCovered: ["Chikkamagaluru", "Chittoor"],
+  },
+  {
+    origin: "Chennai International",
+    originIATACode: "MAA",
+    destination: "Bangalore",
+    destinationIATACode: "BLR",
+    citiesCovered: ["Vellore"],
+  },
+  {
+    origin: "Coimbatore International",
+    originIATACode: "CJB",
+    destination: "Bangalore",
+    destinationIATACode: "BLR",
+    citiesCovered: ["Mysore"],
+  },
+  {
+    origin: "Tirupati",
+    originIATACode: "TIR",
+    destination: "Bangalore",
+    destinationIATACode: "BLR",
+    citiesCovered: ["Chittoor"],
+  },
+  {
+    origin: "Cuddapah",
+    originIATACode: "CDP",
+    destination: "Bangalore",
+    destinationIATACode: "BLR",
+    citiesCovered: ["Chittoor"],
+  },
+];
 
 const getCitiesCovered = (originIATACode, destinationIATACode, routes) => {
   const findRoute = (origin, destination) =>
@@ -626,6 +870,11 @@ const fetchAirportData = async (latitude, longitude, radius) => {
   }
 };
 
+const util = require("util");
+
+// Promisify the db.query method
+const query = util.promisify(db.query).bind(db);
+
 async function getFlyStatus(citiesCovered) {
   try {
     const weatherPromises = citiesCovered.map((location) =>
@@ -633,12 +882,13 @@ async function getFlyStatus(citiesCovered) {
     );
     const weatherResponses = await Promise.all(weatherPromises);
 
-    const results = await Promise.all(weatherResponses.map(async (weatherData) => {
-      const factors = extractFactors(weatherData);
-      console.log(factors);
+    const results = await Promise.all(
+      weatherResponses.map(async (weatherData) => {
+        const factors = extractFactors(weatherData);
+        console.log(factors);
 
-      const insertQuery = `
-        INSERT INTO weather (
+        const insertQuery = `
+        INSERT INTO Weather (
           Location,
           WeatherText,
           Latitude,
@@ -656,34 +906,35 @@ async function getFlyStatus(citiesCovered) {
           TimeStamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?))
       `;
-      
-      const values = [
-        factors.location,
-        factors.text,
-        factors.latitude,
-        factors.longitude,
-        factors.wind.speed,
-        factors.wind.direction,
-        factors.visibility.km,
-        factors.temperature.celsius,
-        factors.pressure.mb,
-        factors.precipitation.mm,
-        factors.humidity,
-        factors.cloudCover,
-        factors.uvIndex,
-        factors.gust.mph,
-        factors.lastUpdated
-      ];
 
-      try {
-        await db.query(insertQuery, values);
-      } catch (dbError) {
-        console.error('Error inserting weather data:', dbError);
-      }
+        const values = [
+          factors.location,
+          factors.text,
+          factors.latitude,
+          factors.longitude,
+          factors.wind.speed,
+          factors.wind.direction,
+          factors.visibility.km,
+          factors.temperature.celsius,
+          factors.pressure.mb,
+          factors.precipitation.mm,
+          factors.humidity,
+          factors.cloudCover,
+          factors.uvIndex,
+          factors.gust.mph,
+          factors.lastUpdated,
+        ];
 
-      const isSuitable = checkWeatherConditions(factors);
-      return isSuitable;
-    }));
+        try {
+          await query(insertQuery, values);
+        } catch (dbError) {
+          console.error("Error inserting weather data:", dbError);
+        }
+
+        const isSuitable = checkWeatherConditions(factors);
+        return isSuitable;
+      })
+    );
 
     const allSuitable = results.every((result) => result);
 
@@ -737,8 +988,6 @@ const constructGraph = async (
           if (!graph[sourceAirport.iataCode]) {
             graph[sourceAirport.iataCode] = [];
           }
-
-       
 
           graph[sourceAirport.iataCode].push({
             iataCode: airport.iataCode,
@@ -939,8 +1188,7 @@ app.post("/api/airport-graphs", async (req, res) => {
   // Merge the graphs
   const mergedGraph = { ...graph1, ...graph };
 
-
-  console.log(mergedGraph)
+  console.log(mergedGraph);
 
   // Find the shortest path using Dijkstra's algorithm
   const result = findShortestPath(mergedGraph, sourceIataCode, skipIataCode);
@@ -952,37 +1200,40 @@ app.post("/api/airport-graphs", async (req, res) => {
   });
 });
 
-
-
-
-app.post('/api/airport-graphs', async (req, res) => {
+app.post("/api/airport-graphs", async (req, res) => {
   try {
     const { sourceIataCode, destinationIataCode } = req.body;
-    const response = await axios.post(`https://flight-navigation-backend.onrender.com/api/airport-graphs`, {
-      sourceIataCode,
-      destinationIataCode,
-    });
+    const response = await axios.post(
+      "http://localhost:5000/api/airport-graphs",
+      {
+        sourceIataCode,
+        destinationIataCode,
+      }
+    );
     res.json(response.data);
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
 
-app.post('/api/airport-distance', async (req, res) => {
+app.post("/api/airport-distance", async (req, res) => {
   try {
     const { from, to } = req.body;
-    const response = await axios.post('https://airportgap.com/api/airports/distance', { from, to });
+    const response = await axios.post(
+      "https://airportgap.com/api/airports/distance",
+      { from, to }
+    );
     res.json(response.data);
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
 
-app.get('/api/flight-fuel', async (req, res) => {
+app.get("/api/flight-fuel", async (req, res) => {
   try {
     const { aircraft, distance, gcd } = req.query;
-    const response = await axios.get('https://despouy.ca/flight-fuel-api/q/', {
-      params: { aircraft, distance, gcd }
+    const response = await axios.get("https://despouy.ca/flight-fuel-api/q/", {
+      params: { aircraft, distance, gcd },
     });
     res.json(response.data);
   } catch (error) {
@@ -990,21 +1241,17 @@ app.get('/api/flight-fuel', async (req, res) => {
   }
 });
 
-
 app.get("/api/aircraft", (req, res) => {
-
-
-
   const query = `SELECT * FROM aircraft_data`;
 
   db.query(query, (error, results) => {
     if (error) {
-      console.error('Error fetching data:', error);
-      res.status(500).send('Internal Server Error');
+      console.error("Error fetching data:", error);
+      res.status(500).send("Internal Server Error");
       return;
     }
 
-    const models = results.map(row => ({
+    const models = results.map((row) => ({
       model: row.model_name,
       aircraftID: row.aircraft_id,
       flightHours: row.flight_hours,
@@ -1013,22 +1260,21 @@ app.get("/api/aircraft", (req, res) => {
         engine1: {
           EGTMargin: row.engine1_egt_margin,
           vibration: row.engine1_vibration,
-          oilPressure: row.engine1_oil_pressure
+          oilPressure: row.engine1_oil_pressure,
         },
         engine2: {
           EGTMargin: row.engine2_egt_margin,
           vibration: row.engine2_vibration,
-          oilPressure: row.engine2_oil_pressure
-        }
+          oilPressure: row.engine2_oil_pressure,
+        },
       },
       componentStatus: {
         hydraulicSystem: row.hydraulic_system,
         avionics: row.avionics,
-        landingGear: row.landing_gear
+        landingGear: row.landing_gear,
       },
-      systemAlerts: row.system_alerts ? row.system_alerts.split(',') : []
+      systemAlerts: row.system_alerts ? row.system_alerts.split(",") : [],
     }));
-
 
     res.json(models);
   });
@@ -1038,7 +1284,7 @@ app.post("/api/getFlyStatus", async (req, res) => {
   try {
     const citiesCovered = req.body;
 
-    console.log(citiesCovered)
+    console.log(citiesCovered);
 
     const weatherPromises = citiesCovered.map((location) =>
       getEnvironmentalData(location)
@@ -1053,9 +1299,7 @@ app.post("/api/getFlyStatus", async (req, res) => {
 
     const allSuitable = results.every((result) => result);
 
-    
-
-    res.status(200).json( allSuitable );
+    res.status(200).json(allSuitable);
   } catch (error) {
     console.log(error);
     res
@@ -1064,14 +1308,29 @@ app.post("/api/getFlyStatus", async (req, res) => {
   }
 });
 
-app.get("/api/getRoute", async (req, res) => {
+app.post("/api/getFlyStatus", async (req, res) => {
   try {
-    res.status(200).json(routes);
+    const citiesCovered = req.body;
+
+    const weatherPromises = citiesCovered.map((location) =>
+      getEnvironmentalData(location)
+    );
+    const weatherResponses = await Promise.all(weatherPromises);
+
+    const results = weatherResponses.map((weatherData) => {
+      const factors = extractFactors(weatherData);
+      const isSuitable = checkWeatherConditions(factors);
+      return isSuitable;
+    });
+
+    const allSuitable = results.every((result) => result);
+
+    res.status(200).json({ flyingStatus: allSuitable });
   } catch (error) {
     console.log(error);
     res
       .status(500)
-      .json({ status: "error", message: "Failed to fetch routes data" });
+      .json({ status: "error", message: "Failed to fetch environmental data" });
   }
 });
 
