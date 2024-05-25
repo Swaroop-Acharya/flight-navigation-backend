@@ -173,14 +173,14 @@
     {
         "origin": "Mangalore",
         "originIATACode": "IXE",
-        "destination": "Chennai International",
+        "destination": "Chennai",
         "destinationIATACode": "MAA",
         "citiesCovered": ["Chikkamagaluru", "Vellore"]
       },
       {
         "origin": "Mangalore",
         "originIATACode": "IXE",
-        "destination": "Coimbatore International",
+        "destination": "Coimbatore",
         "destinationIATACode": "CJB",
         "citiesCovered": ["Chikkamagaluru", "Mysore"]
       },
@@ -199,14 +199,14 @@
         "citiesCovered": ["Chikkamagaluru", "Chittoor"]
       },
       {
-        "origin": "Chennai International",
+        "origin": "Chennai",
         "originIATACode": "MAA",
         "destination": "Bangalore",
         "destinationIATACode": "BLR",
         "citiesCovered": ["Vellore"]
       },
       {
-        "origin": "Coimbatore International",
+        "origin": "Coimbatore",
         "originIATACode": "CJB",
         "destination": "Bangalore",
         "destinationIATACode": "BLR",

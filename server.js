@@ -323,17 +323,61 @@ const extractFactors = (weatherData) => {
 
 // Function to check weather conditions
 const checkWeatherConditions = (weatherData) => {
-  const minVisibility = 1.0; // Minimum visibility in kilometers
-  const maxWindSpeed = 20.0; // Maximum wind speed in kilometers per hour
+  const minVisibilityKm = 5; // Minimum visibility in kilometers
+  const maxWindSpeedKph = 40; // Maximum wind speed in kilometers per hour
+  const maxCloudCover = 80; // Maximum cloud cover in percentage
+  const minTemperatureC = -40; // Minimum temperature in Celsius
+  const maxTemperatureC = 49; // Maximum temperature in Celsius
+  const minPressureMb = 950; // Minimum pressure in millibars
+  const maxHumidity = 95; // Maximum humidity in percentage
+  const maxUVIndex = 5; // Maximum UV index
 
-  // Check if visibility and wind speed are within acceptable ranges
-  if (
-    weatherData.visibility.km >= minVisibility &&
-    weatherData.wind.speed <= maxWindSpeed
-  ) {
-    return true; // Weather conditions are suitable
+  if (!weatherData) {
+    return false;
   }
-  return false; // Weather conditions are not suitable
+
+  let conditionMet = true;
+  // console.log(weatherData.location+"=>"+weatherData.visibility.km)
+
+  // Check visibility
+  if (weatherData.visibility.km < minVisibilityKm) {
+    conditionMet = false;
+  }
+
+  // Check wind speed
+  if (weatherData.wind.speed > maxWindSpeedKph) {
+    conditionMet = false;
+  }
+
+  // Check cloud cover
+  if (weatherData.cloudCover > maxCloudCover) {
+    conditionMet = false;
+  }
+
+  // Check temperature
+  if (
+    weatherData.temperature.celsius < minTemperatureC ||
+    weatherData.temperature.celsius > maxTemperatureC
+  ) {
+    conditionMet = false;
+  }
+
+  // Check pressure
+  if (weatherData.pressure.mb < minPressureMb) {
+    conditionMet = false;
+  }
+
+  // Check humidity
+  if (weatherData.humidity > maxHumidity) {
+    conditionMet = false;
+  }
+
+  // Check UV index
+  if (weatherData.uvIndex > maxUVIndex) {
+    conditionMet = false;
+  }
+  // console.log(weatherData.location+"=>"+conditionMet)
+  return conditionMet;
 };
 
 app.post("/api/get-nearest-airport", async (req, res) => {
@@ -990,6 +1034,46 @@ app.get("/api/aircraft", (req, res) => {
   });
 });
 
+app.post("/api/getFlyStatus", async (req, res) => {
+  try {
+    const citiesCovered = req.body;
+
+    console.log(citiesCovered)
+
+    const weatherPromises = citiesCovered.map((location) =>
+      getEnvironmentalData(location)
+    );
+    const weatherResponses = await Promise.all(weatherPromises);
+
+    const results = weatherResponses.map((weatherData) => {
+      const factors = extractFactors(weatherData);
+      const isSuitable = checkWeatherConditions(factors);
+      return isSuitable;
+    });
+
+    const allSuitable = results.every((result) => result);
+
+    
+
+    res.status(200).json( allSuitable );
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch environmental data" });
+  }
+});
+
+app.get("/api/getRoute", async (req, res) => {
+  try {
+    res.status(200).json(routes);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch routes data" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
